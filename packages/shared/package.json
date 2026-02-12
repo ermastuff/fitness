@@ -1,0 +1,25 @@
+{
+  "name": "@fitness-forge/shared",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "dev": "tsc -w -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json",
+    "lint": "eslint . --ext .ts"
+  },
+  "dependencies": {
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest"
+  }
+}

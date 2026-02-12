@@ -1,0 +1,318 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum MesocycleStructure {
+  THREE_ONE
+  FOUR_ONE
+  FIVE_ONE
+}
+
+enum WeekType {
+  HARD
+  DELOAD
+}
+
+enum ToolType {
+  DUMBBELL
+  BARBELL
+  MACHINE
+}
+
+enum SessionExerciseMode {
+  AUTO
+  LOCK_LOAD
+  LOCK_REPS
+}
+
+enum ProgressionEntityType {
+  EXERCISE
+  MUSCLE_GROUP_SESSION
+}
+
+enum RecordSource {
+  USER
+  SEED
+  TEST
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  unitKg       Boolean  @default(true) @map("unit_kg")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  mesocycles      Mesocycle[]
+  progressionLogs ProgressionLog[]
+  exerciseWeekBests ExerciseWeekBest[]
+  exerciseLastHardBests ExerciseLastHardBest[]
+
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Mesocycle {
+  id         String            @id @default(uuid()) @db.Uuid
+  userId     String            @db.Uuid @map("user_id")
+  name       String            @default("Mesociclo")
+  startDate  DateTime          @map("start_date")
+  structure  MesocycleStructure
+  weeksTotal Int               @map("weeks_total")
+  active     Boolean           @default(true)
+  createdAt  DateTime          @default(now()) @map("created_at")
+  source     RecordSource      @default(USER)
+
+  user            User             @relation(fields: [userId], references: [id])
+  weeks           Week[]
+  sessions        Session[]
+  progressionLogs ProgressionLog[]
+  muscleGroupAutoVolumeStates MuscleGroupAutoVolumeState[]
+
+  @@index([userId])
+  @@index([active])
+  @@index([userId, active])
+  @@map("mesocycles")
+}
+
+model Week {
+  id          String   @id @default(uuid()) @db.Uuid
+  mesocycleId String   @db.Uuid @map("mesocycle_id")
+  weekIndex   Int      @map("week_index")
+  isDeload    Boolean  @map("is_deload")
+  weekType    WeekType @default(HARD) @map("week_type")
+  rirTarget   Int      @map("rir_target")
+  startDate   DateTime @map("start_date")
+
+  mesocycle       Mesocycle       @relation(fields: [mesocycleId], references: [id])
+  sessions        Session[]
+  progressionLogs ProgressionLog[]
+  exerciseWeekBests ExerciseWeekBest[]
+
+  @@index([mesocycleId])
+  @@index([mesocycleId, weekIndex])
+  @@map("weeks")
+}
+
+model Session {
+  id                String   @id @default(uuid()) @db.Uuid
+  mesocycleId       String   @db.Uuid @map("mesocycle_id")
+  weekId            String   @db.Uuid @map("week_id")
+  dayOfWeek         Int      @map("day_of_week")
+  sessionName       String   @map("session_name")
+  sessionOrderInWeek Int     @map("session_order_in_week")
+  scheduledDate     DateTime @map("scheduled_date")
+  completedAt       DateTime? @map("completed_at")
+  source            RecordSource @default(USER)
+
+  mesocycle           Mesocycle           @relation(fields: [mesocycleId], references: [id])
+  week                Week                @relation(fields: [weekId], references: [id])
+  sessionExercises    SessionExercise[]
+  sessionMuscleGroups SessionMuscleGroup[]
+  progressionLogs     ProgressionLog[]
+
+  @@index([mesocycleId])
+  @@index([weekId])
+  @@index([weekId, dayOfWeek])
+  @@index([weekId, sessionOrderInWeek])
+  @@index([scheduledDate])
+  @@map("sessions")
+}
+
+model MuscleGroup {
+  id   String @id @default(uuid()) @db.Uuid
+  name String @unique
+
+  exercises           Exercise[]
+  sessionMuscleGroups SessionMuscleGroup[]
+  muscleGroupAutoVolumeStates MuscleGroupAutoVolumeState[]
+
+  @@map("muscle_groups")
+}
+
+model Exercise {
+  id                   String   @id @default(uuid()) @db.Uuid
+  name                 String
+  toolType             ToolType @map("tool_type")
+  primaryMuscleGroupId String   @db.Uuid @map("primary_muscle_group_id")
+  createdAt            DateTime @default(now()) @map("created_at")
+
+  primaryMuscleGroup MuscleGroup      @relation(fields: [primaryMuscleGroupId], references: [id])
+  sessionExercises   SessionExercise[]
+  exerciseWeekBests  ExerciseWeekBest[]
+  exerciseLastHardBests ExerciseLastHardBest[]
+
+  @@index([primaryMuscleGroupId])
+  @@index([name])
+  @@unique([name, toolType])
+  @@map("exercises")
+}
+
+model SessionExercise {
+  id             String             @id @default(uuid()) @db.Uuid
+  sessionId      String             @db.Uuid @map("session_id")
+  exerciseId     String             @db.Uuid @map("exercise_id")
+  orderIndex     Int                @map("order_index")
+  setsTarget     Int                @map("sets_target")
+  autoVolumeEnabled Boolean         @default(true) @map("auto_volume_enabled")
+  exerciseRole       String         @default("secondary") @map("exercise_role")
+  minSets            Int            @default(1) @map("min_sets")
+  maxSets            Int            @default(6) @map("max_sets")
+  jointStress        Int            @default(3) @map("joint_stress")
+  lastAutoVolumeAdjustedAt DateTime? @map("last_auto_volume_adjusted_at")
+  lastAutoVolumeAdjustedDirection Int? @map("last_auto_volume_adjusted_direction")
+  mode           SessionExerciseMode
+  loadTarget     Float?             @map("load_target")
+  repsTargetHint Int?               @map("reps_target_hint")
+
+  session        Session         @relation(fields: [sessionId], references: [id])
+  exercise       Exercise        @relation(fields: [exerciseId], references: [id])
+  workoutSets    WorkoutSet[]
+  exerciseResult ExerciseResult?
+
+  @@index([sessionId])
+  @@index([exerciseId])
+  @@index([autoVolumeEnabled, exerciseId])
+  @@index([lastAutoVolumeAdjustedAt])
+  @@index([sessionId, exerciseId])
+  @@unique([sessionId, orderIndex])
+  @@map("session_exercises")
+}
+
+model WorkoutSet {
+  id                String @id @default(uuid()) @db.Uuid
+  sessionExerciseId String @db.Uuid @map("session_exercise_id")
+  setIndex          Int    @map("set_index")
+  loadUsed          Float? @map("load_used")
+  repsDone          Int?   @map("reps_done")
+
+  sessionExercise SessionExercise @relation(fields: [sessionExerciseId], references: [id])
+
+  @@index([sessionExerciseId])
+  @@unique([sessionExerciseId, setIndex])
+  @@map("workout_sets")
+}
+
+model ExerciseResult {
+  id                String @id @default(uuid()) @db.Uuid
+  sessionExerciseId String @db.Uuid @map("session_exercise_id")
+  rirLastSet        Int?   @map("rir_last_set")
+  repsRef           Int?   @map("reps_ref")
+  notes             String?
+
+  sessionExercise SessionExercise @relation(fields: [sessionExerciseId], references: [id])
+
+  @@unique([sessionExerciseId])
+  @@map("exercise_results")
+}
+
+model SessionMuscleGroup {
+  id               String @id @default(uuid()) @db.Uuid
+  sessionId         String @db.Uuid @map("session_id")
+  muscleGroupId     String @db.Uuid @map("muscle_group_id")
+  fatigue           Int
+  doms              Int
+  pump              Int
+  tendonPain        Int @map("tendon_pain")
+  perf              Int
+  deltaSets         Int    @map("delta_sets")
+  setsTargetSession Int    @map("sets_target_session")
+
+  session     Session     @relation(fields: [sessionId], references: [id])
+  muscleGroup MuscleGroup @relation(fields: [muscleGroupId], references: [id])
+
+  @@index([sessionId])
+  @@index([muscleGroupId])
+  @@unique([sessionId, muscleGroupId])
+  @@map("session_muscle_groups")
+}
+
+model MuscleGroupAutoVolumeState {
+  id               String   @id @default(uuid()) @db.Uuid
+  mesocycleId      String   @db.Uuid @map("mesocycle_id")
+  muscleGroupId    String   @db.Uuid @map("muscle_group_id")
+  lastDeltaSign    Int      @default(0) @map("last_delta_sign")
+  consecutiveCount Int      @default(0) @map("consecutive_count")
+  updatedAt        DateTime @default(now()) @map("updated_at")
+
+  mesocycle    Mesocycle   @relation(fields: [mesocycleId], references: [id])
+  muscleGroup  MuscleGroup @relation(fields: [muscleGroupId], references: [id])
+
+  @@unique([mesocycleId, muscleGroupId])
+  @@index([mesocycleId])
+  @@index([muscleGroupId])
+  @@map("muscle_group_auto_volume_states")
+}
+
+model ExerciseWeekBest {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid @map("user_id")
+  exerciseId    String   @db.Uuid @map("exercise_id")
+  weekId        String   @db.Uuid @map("week_id")
+  bestSetWeight Float    @map("best_set_weight")
+  bestSetReps   Int      @map("best_set_reps")
+  bestSetE1rm   Float    @map("best_set_e1rm")
+  bestSetId     String?  @db.Uuid @map("best_set_id")
+  computedAt    DateTime @default(now()) @map("computed_at")
+
+  user      User     @relation(fields: [userId], references: [id])
+  exercise  Exercise @relation(fields: [exerciseId], references: [id])
+  week      Week     @relation(fields: [weekId], references: [id])
+
+  @@unique([userId, exerciseId, weekId])
+  @@index([userId, exerciseId])
+  @@index([weekId])
+  @@map("exercise_week_bests")
+}
+
+model ExerciseLastHardBest {
+  userId        String   @db.Uuid @map("user_id")
+  exerciseId    String   @db.Uuid @map("exercise_id")
+  sourceWeekId  String?  @db.Uuid @map("source_week_id")
+  bestSetWeight Float    @map("best_set_weight")
+  bestSetReps   Int      @map("best_set_reps")
+  bestSetE1rm   Float    @map("best_set_e1rm")
+  updatedAt     DateTime @default(now()) @map("updated_at")
+
+  user     User     @relation(fields: [userId], references: [id])
+  exercise Exercise @relation(fields: [exerciseId], references: [id])
+
+  @@id([userId, exerciseId])
+  @@index([userId])
+  @@map("exercise_last_hard_bests")
+}
+
+model ProgressionLog {
+  id          String               @id @default(uuid()) @db.Uuid
+  userId      String               @db.Uuid @map("user_id")
+  mesocycleId String               @db.Uuid @map("mesocycle_id")
+  weekId      String               @db.Uuid @map("week_id")
+  sessionId   String?              @db.Uuid @map("session_id")
+  entityType  ProgressionEntityType @map("entity_type")
+  entityId    String               @map("entity_id")
+  prevValue   Json                 @map("prev_value")
+  newValue    Json                 @map("new_value")
+  reason      String?
+  createdAt   DateTime             @default(now()) @map("created_at")
+  source      RecordSource         @default(USER)
+
+  user      User      @relation(fields: [userId], references: [id])
+  mesocycle Mesocycle @relation(fields: [mesocycleId], references: [id])
+  week      Week      @relation(fields: [weekId], references: [id])
+  session   Session?  @relation(fields: [sessionId], references: [id])
+
+  @@index([userId])
+  @@index([mesocycleId])
+  @@index([weekId])
+  @@index([sessionId])
+  @@index([entityType])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("progression_logs")
+}

@@ -1,0 +1,2 @@
+ALTER TABLE "mesocycles"
+  ADD COLUMN IF NOT EXISTS "name" TEXT NOT NULL DEFAULT 'Mesociclo';
