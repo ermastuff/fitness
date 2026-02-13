@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { ProgressionEntityType, RecordSource, SessionExerciseMode } from '@prisma/client';
-import { prisma } from '../db/prisma';
-import { computeExerciseTargets, computePerfSessionFromNumbers } from '../services/trainingEngine';
+import { prisma } from '../db/prisma.js';
+import { computeExerciseTargets, computePerfSessionFromNumbers } from '../services/trainingEngine.js';
 import {
   aggregateWeeklyFeedback,
   applyPainOverride,
@@ -10,8 +10,8 @@ import {
   computeDeltaFromMatrix,
   filterCandidatesForDelta,
   selectAutoVolumeCandidate,
-} from '../services/autoVolume';
-import { computeWeekExerciseBests } from '../services/exerciseBests';
+} from '../services/autoVolume.js';
+import { computeWeekExerciseBests } from '../services/exerciseBests.js';
 
 const router = Router();
 

@@ -1,8 +1,8 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { MesocycleStructure, RecordSource } from '@prisma/client';
-import { prisma } from '../db/prisma';
-import { computeWeekExerciseBests } from '../services/exerciseBests';
+import { prisma } from '../db/prisma.js';
+import { computeWeekExerciseBests } from '../services/exerciseBests.js';
 
 const router = Router();
 

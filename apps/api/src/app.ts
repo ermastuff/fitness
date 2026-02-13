@@ -1,13 +1,13 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import authRouter from './routes/auth';
-import { authMiddleware } from './middleware/auth';
-import { prisma } from './db/prisma';
-import mesocyclesRouter from './routes/mesocycles';
-import sessionsRouter from './routes/sessions';
-import weeksRouter from './routes/weeks';
-import exercisesRouter from './routes/exercises';
+import authRouter from './routes/auth.js';
+import { authMiddleware } from './middleware/auth.js';
+import { prisma } from './db/prisma.js';
+import mesocyclesRouter from './routes/mesocycles.js';
+import sessionsRouter from './routes/sessions.js';
+import weeksRouter from './routes/weeks.js';
+import exercisesRouter from './routes/exercises.js';
 
 dotenv.config();
 
