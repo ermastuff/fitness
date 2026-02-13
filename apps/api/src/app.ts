@@ -1,7 +1,6 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { HealthCheckSchema } from '@fitness-forge/shared';
 import authRouter from './routes/auth';
 import { authMiddleware } from './middleware/auth';
 import { prisma } from './db/prisma';
@@ -29,8 +28,7 @@ app.use(
 app.use(express.json());
 
 app.get('/health', (_req, res) => {
-  const payload = HealthCheckSchema.parse({ status: 'ok' });
-  res.json(payload);
+  res.json({ status: 'ok' });
 });
 
 app.use('/auth', authRouter);

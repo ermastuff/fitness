@@ -1,7 +1,4 @@
-import { estimateE1rmStrengthLevel } from '@fitness-forge/shared';
-import type { Prisma, WeekType } from '@prisma/client';
-
-type PrismaClientLike = Prisma.TransactionClient;
+type PrismaClientLike = any;
 
 type ComputeResult = {
   weekId: string;
@@ -9,7 +6,20 @@ type ComputeResult = {
   updatedExercises: number;
 };
 
-const resolveHardWeek = (weekType: WeekType | null | undefined, isDeload?: boolean) => {
+const estimateE1rmStrengthLevel = (weight: number, reps: number) => {
+  const brz = (weight * 36) / (37 - reps);
+  const epl = weight * (1 + reps / 30);
+  if (reps < 8) {
+    return brz;
+  }
+  if (reps > 10) {
+    return epl;
+  }
+  const t = (reps - 8) / 2;
+  return (1 - t) * brz + t * epl;
+};
+
+const resolveHardWeek = (weekType: string | null | undefined, isDeload?: boolean) => {
   if (weekType) {
     return weekType === 'HARD';
   }

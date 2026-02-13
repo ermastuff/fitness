@@ -156,6 +156,7 @@ router.post('/:id/complete', async (req, res) => {
   if (!req.user?.id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  const userId = req.user.id;
 
   const result = completeSessionSchema.safeParse(req.body);
   if (!result.success) {
@@ -165,7 +166,7 @@ router.post('/:id/complete', async (req, res) => {
   const session = await prisma.session.findFirst({
     where: {
       id: req.params.id,
-      mesocycle: { userId: req.user.id },
+      mesocycle: { userId },
     },
     include: {
       week: true,
@@ -367,7 +368,7 @@ router.post('/:id/complete', async (req, res) => {
         });
 
         logs.push({
-          userId: req.user.id,
+          userId,
           mesocycleId: session.mesocycleId,
           weekId: future.session.weekId,
           sessionId: future.sessionId,
@@ -446,7 +447,7 @@ router.post('/:id/complete', async (req, res) => {
         return avgLoad * repsRef;
       });
 
-      return scores.reduce((sum, value) => sum + value, 0) / scores.length;
+      return scores.reduce((sum: number, value: number) => sum + value, 0) / scores.length;
     };
 
     const computeScoreFromCurrent = (muscleGroupId: string) => {
@@ -473,11 +474,17 @@ router.post('/:id/complete', async (req, res) => {
       const perf = computePerfSessionFromNumbers(currentScore, prevScore);
 
       const exercisesForGroup = sessionExercises
-        .filter((item) => item.exercise.primaryMuscleGroupId === feedback.muscleGroupId)
-        .sort((a, b) => a.orderIndex - b.orderIndex);
+        .filter(
+          (item: (typeof sessionExercises)[number]) =>
+            item.exercise.primaryMuscleGroupId === feedback.muscleGroupId,
+        )
+        .sort(
+          (a: (typeof sessionExercises)[number], b: (typeof sessionExercises)[number]) =>
+            a.orderIndex - b.orderIndex,
+        );
 
       const setsTargetSession = exercisesForGroup.reduce(
-        (sum, item) => sum + item.setsTarget,
+        (sum: number, item: (typeof sessionExercises)[number]) => sum + item.setsTarget,
         0,
       );
       const actualSets = setsByMuscleGroup.get(feedback.muscleGroupId);
@@ -515,7 +522,7 @@ router.post('/:id/complete', async (req, res) => {
       });
 
       logs.push({
-        userId: req.user.id,
+        userId,
         mesocycleId: session.mesocycleId,
         weekId: session.weekId,
         sessionId: session.id,
@@ -561,7 +568,7 @@ router.post('/:id/complete', async (req, res) => {
         { sets: number; fatigue: number; doms: number; pump: number; tendonPain: number }[]
       >();
 
-      weeklyFeedback.forEach((entry) => {
+      weeklyFeedback.forEach((entry: (typeof weeklyFeedback)[number]) => {
         const list = grouped.get(entry.muscleGroupId) ?? [];
         list.push({
           sets: entry.setsTargetSession,
@@ -691,13 +698,15 @@ router.post('/:id/complete', async (req, res) => {
               },
             });
 
-            const localExercise = sessionExercises.find((item) => item.id === chosen.id);
+            const localExercise = sessionExercises.find(
+              (item: (typeof sessionExercises)[number]) => item.id === chosen.id,
+            );
             if (localExercise) {
               localExercise.setsTarget = nextSetsTarget;
             }
 
             logs.push({
-              userId: req.user.id,
+              userId,
               mesocycleId: session.mesocycleId,
               weekId: session.weekId,
               sessionId: session.id,
@@ -712,7 +721,7 @@ router.post('/:id/complete', async (req, res) => {
         }
       }
 
-      await computeWeekExerciseBests(tx, req.user.id, session.weekId);
+      await computeWeekExerciseBests(tx, userId, session.weekId);
     }
 
     const targetUpdates: {
@@ -778,7 +787,7 @@ router.post('/:id/complete', async (req, res) => {
 
         if (targetsChanged) {
           logs.push({
-            userId: req.user.id,
+            userId,
             mesocycleId: session.mesocycleId,
             weekId: session.weekId,
             sessionId: session.id,
@@ -825,11 +834,12 @@ router.get('/:id', async (req, res) => {
   if (!req.user?.id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  const userId = req.user.id;
 
   const session = await prisma.session.findFirst({
     where: {
       id: req.params.id,
-      mesocycle: { userId: req.user.id },
+      mesocycle: { userId },
     },
     include: {
       week: true,

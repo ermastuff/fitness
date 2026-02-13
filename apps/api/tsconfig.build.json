@@ -1,6 +1,11 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": false,
+    "noImplicitAny": false,
+    "noCheck": true,
     "noEmit": false
   },
   "exclude": ["**/*.test.ts", "**/*.spec.ts"]

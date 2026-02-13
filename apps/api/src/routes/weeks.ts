@@ -1,7 +1,7 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { prisma } from '../db/prisma';
-import { computeWeekExerciseBests } from '../services/exerciseBests';
+import { prisma } from '../db/prisma.js';
+import { computeWeekExerciseBests } from '../services/exerciseBests.js';
 
 const router = Router();
 
@@ -40,6 +40,7 @@ router.post('/:id/close', async (req, res) => {
   if (!req.user?.id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
+  const userId = req.user.id;
 
   const idResult = weekIdSchema.safeParse(req.params.id);
   if (!idResult.success) {
@@ -49,7 +50,7 @@ router.post('/:id/close', async (req, res) => {
   const week = await prisma.week.findFirst({
     where: {
       id: idResult.data,
-      mesocycle: { userId: req.user.id },
+      mesocycle: { userId },
     },
     select: {
       id: true,
@@ -70,11 +71,11 @@ router.post('/:id/close', async (req, res) => {
     return res.status(409).json({ error: 'Week has incomplete sessions' });
   }
 
-  const result = await prisma.$transaction(async (tx) =>
-    computeWeekExerciseBests(tx, req.user.id, week.id),
+  const result = await prisma.$transaction(async (tx: any) =>
+    computeWeekExerciseBests(tx, userId, week.id),
   );
 
-  return res.json({ weekId: week.id, ...result });
+  return res.json(result);
 });
 
 export default router;
