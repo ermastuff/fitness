@@ -38,9 +38,6 @@ importers:
 
   apps/api:
     dependencies:
-      '@fitness-forge/shared':
-        specifier: workspace:*
-        version: link:../../packages/shared
       '@prisma/adapter-pg':
         specifier: ^7.3.0
         version: 7.3.0
@@ -83,7 +80,7 @@ importers:
         version: 25.2.2
       prisma:
         specifier: latest
-        version: 7.3.0(@types/react@19.2.13)(react-dom@19.2.4)(react@19.2.4)(typescript@5.9.3)
+        version: 7.3.0(@types/react@19.2.14)(react-dom@19.2.4)(react@19.2.4)(typescript@5.9.3)
       tsx:
         specifier: latest
         version: 4.21.0
@@ -747,7 +744,7 @@ packages:
         optional: true
     dependencies:
       '@prisma/client-runtime-utils': 7.3.0
-      prisma: 7.3.0(@types/react@19.2.13)(react-dom@19.2.4)(react@19.2.4)(typescript@5.9.3)
+      prisma: 7.3.0(@types/react@19.2.14)(react-dom@19.2.4)(react@19.2.4)(typescript@5.9.3)
       typescript: 5.9.3
     dev: false
 
@@ -828,14 +825,14 @@ packages:
   /@prisma/query-plan-executor@7.2.0:
     resolution: {integrity: sha512-EOZmNzcV8uJ0mae3DhTsiHgoNCuu1J9mULQpGCh62zN3PxPTd+qI9tJvk5jOst8WHKQNwJWR3b39t0XvfBB0WQ==}
 
-  /@prisma/studio-core@0.13.1(@types/react@19.2.13)(react-dom@19.2.4)(react@19.2.4):
+  /@prisma/studio-core@0.13.1(@types/react@19.2.14)(react-dom@19.2.4)(react@19.2.4):
     resolution: {integrity: sha512-agdqaPEePRHcQ7CexEfkX1RvSH9uWDb6pXrZnhCRykhDFAV0/0P3d07WtfiY8hZWb7oRU4v+NkT4cGFHkQJIPg==}
     peerDependencies:
       '@types/react': ^18.0.0 || ^19.0.0
       react: ^18.0.0 || ^19.0.0
       react-dom: ^18.0.0 || ^19.0.0
     dependencies:
-      '@types/react': 19.2.13
+      '@types/react': 19.2.14
       react: 19.2.4
       react-dom: 19.2.4(react@19.2.4)
 
@@ -1186,6 +1183,12 @@ packages:
 
   /@types/react@19.2.13:
     resolution: {integrity: sha512-KkiJeU6VbYbUOp5ITMIc7kBfqlYkKA5KhEHVrGMmUUMt7NeaZg65ojdPk+FtNrBAOXNVM5QM72jnADjM+XVRAQ==}
+    dependencies:
+      csstype: 3.2.3
+    dev: true
+
+  /@types/react@19.2.14:
+    resolution: {integrity: sha512-ilcTH/UniCkMdtexkoCN0bI7pMcJDvmQFPvuPvmEaYA/NSfFTAgdUSLAoVjaRJm7+6PvcM+q1zYOwS4wTYMF9w==}
     dependencies:
       csstype: 3.2.3
 
@@ -3337,7 +3340,7 @@ packages:
     hasBin: true
     dev: true
 
-  /prisma@7.3.0(@types/react@19.2.13)(react-dom@19.2.4)(react@19.2.4)(typescript@5.9.3):
+  /prisma@7.3.0(@types/react@19.2.14)(react-dom@19.2.4)(react@19.2.4)(typescript@5.9.3):
     resolution: {integrity: sha512-ApYSOLHfMN8WftJA+vL6XwAPOh/aZ0BgUyyKPwUFgjARmG6EBI9LzDPf6SWULQMSAxydV9qn5gLj037nPNlg2w==}
     engines: {node: ^20.19 || ^22.12 || >=24.0}
     hasBin: true
@@ -3354,7 +3357,7 @@ packages:
       '@prisma/config': 7.3.0
       '@prisma/dev': 0.20.0(typescript@5.9.3)
       '@prisma/engines': 7.3.0
-      '@prisma/studio-core': 0.13.1(@types/react@19.2.13)(react-dom@19.2.4)(react@19.2.4)
+      '@prisma/studio-core': 0.13.1(@types/react@19.2.14)(react-dom@19.2.4)(react@19.2.4)
       mysql2: 3.15.3
       postgres: 3.4.7
       typescript: 5.9.3
