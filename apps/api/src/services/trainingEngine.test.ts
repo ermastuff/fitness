@@ -73,7 +73,7 @@ describe('TrainingEngine.computeDeltaSets', () => {
 describe('TrainingEngine.computeExerciseTargets', () => {
   it('uses step min as default load increase', () => {
     const result = computeExerciseTargets({
-      toolType: 'DUMBBELL',
+      progressionTag: 'DB_STD',
       loadPrev: 20,
       repsRefPrev: 10,
       setsPrev: 3,
@@ -85,7 +85,7 @@ describe('TrainingEngine.computeExerciseTargets', () => {
 
   it('scales reps when load exceeds step max', () => {
     const result = computeExerciseTargets({
-      toolType: 'BARBELL',
+      progressionTag: 'BB_STD',
       loadPrev: 100,
       repsRefPrev: 8,
       setsPrev: 3,
@@ -112,7 +112,7 @@ describe('Series target (e1RM)', () => {
 
   it('reduces reps when weight increases significantly', () => {
     const result = findRepsEquivalent(105, 8, 110, {
-      toolType: 'BARBELL',
+      progressionTag: 'BB_STD',
       maxRepDropPerWeek: 5,
       maxRepIncreasePerWeek: 5,
     });
@@ -122,7 +122,7 @@ describe('Series target (e1RM)', () => {
 
   it('increases reps when weight decreases, with clamp', () => {
     const result = findRepsEquivalent(100, 8, 90, {
-      toolType: 'BARBELL',
+      progressionTag: 'BB_STD',
       maxRepDropPerWeek: 3,
       maxRepIncreasePerWeek: 3,
     });
@@ -134,8 +134,8 @@ describe('Series target (e1RM)', () => {
 
   it('clamps to min reps', () => {
     const result = findRepsEquivalent(105, 5, 130, {
-      toolType: 'BARBELL',
-      minRepsByTool: { BARBELL: 4 },
+      progressionTag: 'BB_STD',
+      minRepsByTag: { BB_STD: 4 },
       maxRepDropPerWeek: 10,
       maxRepIncreasePerWeek: 10,
     });
@@ -146,7 +146,7 @@ describe('Series target (e1RM)', () => {
 
   it('flags too heavy when intensity is above threshold', () => {
     const result = findRepsEquivalent(105, 8, 120, {
-      toolType: 'BARBELL',
+      progressionTag: 'BB_STD',
       maxIntensity: 0.92,
     });
 
@@ -157,7 +157,7 @@ describe('Series target (e1RM)', () => {
     const result = computeSeriesTarget(
       { weight: 16.5, reps: 12 },
       null,
-      { toolType: 'DUMBBELL' },
+      { progressionTag: 'DB_STD' },
     );
 
     expect(result.weightTarget).toBe(17.5);
@@ -169,7 +169,7 @@ describe('Series target (e1RM)', () => {
     const result = computeSeriesTarget(
       { weight: 16.5, reps: 12 },
       17,
-      { toolType: 'DUMBBELL' },
+      { progressionTag: 'DB_STD' },
     );
 
     expect(result.repsTarget).toBe(13);
@@ -180,7 +180,7 @@ describe('Series target (e1RM)', () => {
     const result = computeSeriesTarget(
       { weight: 100, reps: 8 },
       104,
-      { toolType: 'BARBELL' },
+      { progressionTag: 'BB_STD' },
     );
 
     expect(result.repsTarget).toBe(8);
@@ -191,7 +191,7 @@ describe('Series target (e1RM)', () => {
     const result = computeSeriesTarget(
       { weight: 100, reps: 5 },
       140,
-      { toolType: 'BARBELL', minRepsByTool: { BARBELL: 4 }, removeRepsIfClamped: true },
+      { progressionTag: 'BB_STD', minRepsByTag: { BB_STD: 4 }, removeRepsIfClamped: true },
     );
 
     expect(result.repsTarget).toBeNull();

@@ -14,15 +14,15 @@ type ExerciseInputState = {
   autoSetCount: number;
 };
 
-const getStepRange = (toolType: SessionExercise['exercise']['toolType']) => {
-  if (toolType === 'DUMBBELL') {
+const getStepRange = (progressionTag: SessionExercise['exercise']['progressionTag']) => {
+  if (progressionTag === 'DB_STD') {
     return { min: 1, max: 2.5, overstepUnit: 1.5 };
   }
   return { min: 2.5, max: 5, overstepUnit: 2.5 };
 };
 
 const SERIES_TARGET_CONFIG: SeriesTargetConfig = {
-  minRepsByTool: { DUMBBELL: 5, MACHINE: 5, BARBELL: 3 },
+  minRepsByTag: { DB_STD: 5, MACH_STD: 5, BB_STD: 3 },
   maxRepDropPerWeek: 3,
   maxRepIncreasePerWeek: 5,
   maxIntensity: 0.92,
@@ -167,7 +167,7 @@ const WorkoutSessionPage = () => {
 
             if (baseSet) {
               const target = computeSeriesTarget(baseSet, null, {
-                toolType: exercise.exercise.toolType,
+                progressionTag: exercise.exercise.progressionTag,
                 ...SERIES_TARGET_CONFIG,
               });
               return {
@@ -413,7 +413,7 @@ const WorkoutSessionPage = () => {
       <div className="stack">
         {sessionExercises.map((exercise: SessionExercise) => {
           const state = exerciseState[exercise.id];
-          const stepRange = getStepRange(exercise.exercise.toolType);
+          const stepRange = getStepRange(exercise.exercise.progressionTag);
           const isDeload = Boolean(session.week?.isDeload);
           const isWeekOne = session.week?.weekIndex === 1;
           const prevExercise = previousSetsMap.get(
@@ -483,7 +483,7 @@ const WorkoutSessionPage = () => {
 
                           if (baseSet) {
                             const target = computeSeriesTarget(baseSet, nextLoad, {
-                              toolType: exercise.exercise.toolType,
+                              progressionTag: exercise.exercise.progressionTag,
                               ...SERIES_TARGET_CONFIG,
                             });
                             updatedSets = next.map((set, idx) =>

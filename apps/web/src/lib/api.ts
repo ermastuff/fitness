@@ -37,7 +37,8 @@ export type Mesocycle = {
 export type Exercise = {
   id: string;
   name: string;
-  toolType: 'DUMBBELL' | 'BARBELL' | 'MACHINE';
+  toolType: 'DUMBBELL' | 'BARBELL' | 'MACHINE' | 'BODYWEIGHT';
+  progressionTag: 'DB_STD' | 'BB_STD' | 'MACH_STD';
   primaryMuscleGroupId: string;
   primaryMuscleGroup?: { id: string; name: string };
 };

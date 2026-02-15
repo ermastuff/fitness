@@ -763,7 +763,7 @@ router.post('/:id/complete', async (req, res) => {
       const loadPrev = sessionExercise.loadTarget ?? perf?.avgLoad ?? 0;
 
       const targetResult = computeExerciseTargets({
-        toolType: sessionExercise.exercise.toolType,
+        progressionTag: sessionExercise.exercise.progressionTag,
         loadPrev,
         repsRefPrev,
         setsPrev: sessionExercise.setsTarget,

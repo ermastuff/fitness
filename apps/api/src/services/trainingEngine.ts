@@ -1,5 +1,6 @@
 export type MesocycleStructure = 'THREE_ONE' | 'FOUR_ONE' | 'FIVE_ONE';
-export type ToolType = 'DUMBBELL' | 'BARBELL' | 'MACHINE';
+export type ToolType = 'DUMBBELL' | 'BARBELL' | 'MACHINE' | 'BODYWEIGHT';
+export type ProgressionTag = 'DB_STD' | 'BB_STD' | 'MACH_STD';
 export type SessionExerciseMode = 'AUTO' | 'LOCK_LOAD' | 'LOCK_REPS';
 
 export const getRirTarget = (
@@ -97,7 +98,7 @@ export const computeDeltaSets = ({
 };
 
 type ExerciseTargetsInput = {
-  toolType: ToolType;
+  progressionTag: ProgressionTag;
   loadPrev: number;
   repsRefPrev: number;
   setsPrev: number;
@@ -110,23 +111,26 @@ type ExerciseTargetsResult = {
   suggestionText: string | null;
 };
 
-const getStepMin = (toolType: ToolType) => (toolType === 'DUMBBELL' ? 1 : 2.5);
-const getStepMax = (toolType: ToolType) => (toolType === 'DUMBBELL' ? 2.5 : 5);
-const getOverstepUnit = (toolType: ToolType) => (toolType === 'DUMBBELL' ? 1.5 : 2.5);
+const getStepMin = (progressionTag: ProgressionTag) =>
+  progressionTag === 'DB_STD' ? 1 : 2.5;
+const getStepMax = (progressionTag: ProgressionTag) =>
+  progressionTag === 'DB_STD' ? 2.5 : 5;
+const getOverstepUnit = (progressionTag: ProgressionTag) =>
+  progressionTag === 'DB_STD' ? 1.5 : 2.5;
 
 const appendSuggestion = (existing: string | null, next: string) =>
   existing ? `${existing} ${next}` : next;
 
 export const computeExerciseTargets = ({
-  toolType,
+  progressionTag,
   loadPrev,
   repsRefPrev,
   setsPrev,
   loadChosen,
 }: ExerciseTargetsInput): ExerciseTargetsResult => {
-  const stepMin = getStepMin(toolType);
-  const stepMax = getStepMax(toolType);
-  const overstepUnit = getOverstepUnit(toolType);
+  const stepMin = getStepMin(progressionTag);
+  const stepMax = getStepMax(progressionTag);
+  const overstepUnit = getOverstepUnit(progressionTag);
   let loadTarget = loadChosen ?? loadPrev;
   let repsTargetHint = repsRefPrev;
   let suggestionText: string | null = null;

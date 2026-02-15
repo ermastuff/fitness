@@ -1,4 +1,4 @@
-export type ToolType = 'DUMBBELL' | 'BARBELL' | 'MACHINE';
+export type ProgressionTag = 'DB_STD' | 'BB_STD' | 'MACH_STD';
 
 export type SeriesTargetFlags = {
   overrideUsed: boolean;
@@ -18,13 +18,13 @@ export type SeriesTargetFlags = {
 
 export type SeriesTargetConfig = {
   minReps?: number;
-  minRepsByTool?: Partial<Record<ToolType, number>>;
+  minRepsByTag?: Partial<Record<ProgressionTag, number>>;
   maxRepDropPerWeek?: number;
   maxRepIncreasePerWeek?: number;
   maxIntensity?: number;
   maxRepsScan?: number;
-  stepMinByTool?: Partial<Record<ToolType, number>>;
-  stepMaxByTool?: Partial<Record<ToolType, number>>;
+  stepMinByTag?: Partial<Record<ProgressionTag, number>>;
+  stepMaxByTag?: Partial<Record<ProgressionTag, number>>;
   weightQuantization?: number;
   removeRepsIfClamped?: boolean;
 };
@@ -34,32 +34,34 @@ type PreviousSet = {
   reps: number;
 };
 
-const DEFAULT_STEP_MIN: Record<ToolType, number> = {
-  DUMBBELL: 1,
-  BARBELL: 2.5,
-  MACHINE: 2.5,
+const DEFAULT_STEP_MIN: Record<ProgressionTag, number> = {
+  DB_STD: 1,
+  BB_STD: 2.5,
+  MACH_STD: 2.5,
 };
 
-const DEFAULT_STEP_MAX: Record<ToolType, number> = {
-  DUMBBELL: 2.5,
-  BARBELL: 5,
-  MACHINE: 5,
+const DEFAULT_STEP_MAX: Record<ProgressionTag, number> = {
+  DB_STD: 2.5,
+  BB_STD: 5,
+  MACH_STD: 5,
 };
 
-const DEFAULT_MIN_REPS: Record<ToolType, number> = {
-  DUMBBELL: 5,
-  BARBELL: 3,
-  MACHINE: 5,
+const DEFAULT_MIN_REPS: Record<ProgressionTag, number> = {
+  DB_STD: 5,
+  BB_STD: 3,
+  MACH_STD: 5,
 };
 
-const getStepMin = (toolType: ToolType, config?: SeriesTargetConfig) =>
-  config?.stepMinByTool?.[toolType] ?? DEFAULT_STEP_MIN[toolType];
+const getStepMin = (progressionTag: ProgressionTag, config?: SeriesTargetConfig) =>
+  config?.stepMinByTag?.[progressionTag] ?? DEFAULT_STEP_MIN[progressionTag];
 
-const getStepMax = (toolType: ToolType, config?: SeriesTargetConfig) =>
-  config?.stepMaxByTool?.[toolType] ?? DEFAULT_STEP_MAX[toolType];
+const getStepMax = (progressionTag: ProgressionTag, config?: SeriesTargetConfig) =>
+  config?.stepMaxByTag?.[progressionTag] ?? DEFAULT_STEP_MAX[progressionTag];
 
-const getMinReps = (toolType: ToolType, config?: SeriesTargetConfig) =>
-  config?.minReps ?? config?.minRepsByTool?.[toolType] ?? DEFAULT_MIN_REPS[toolType];
+const getMinReps = (progressionTag: ProgressionTag, config?: SeriesTargetConfig) =>
+  config?.minReps ??
+  config?.minRepsByTag?.[progressionTag] ??
+  DEFAULT_MIN_REPS[progressionTag];
 
 const quantizeWeight = (value: number, step: number) =>
   Math.round(value / step) * step;
@@ -87,7 +89,7 @@ export const findRepsForWeight = (
   weightAnchor: number,
   repsAnchor: number,
   weightUser: number,
-  config: SeriesTargetConfig & { toolType: ToolType },
+  config: SeriesTargetConfig & { progressionTag: ProgressionTag },
 ) => {
   const flags: SeriesTargetFlags = {
     overrideUsed: true,
@@ -143,7 +145,7 @@ export const findRepsForWeight = (
     flags.clampedByMaxIncrease = true;
   }
 
-  const minReps = getMinReps(config.toolType, config);
+  const minReps = getMinReps(config.progressionTag, config);
   if (repsTarget < minReps) {
     repsTarget = minReps;
     flags.clampedByMinReps = true;
@@ -173,10 +175,10 @@ export const findRepsForWeight = (
 export const computeSeriesTarget = (
   previousSet: PreviousSet,
   desiredWeight: number | null | undefined,
-  config: SeriesTargetConfig & { toolType: ToolType },
+  config: SeriesTargetConfig & { progressionTag: ProgressionTag },
 ) => {
-  const stepMin = getStepMin(config.toolType, config);
-  const stepMax = getStepMax(config.toolType, config);
+  const stepMin = getStepMin(config.progressionTag, config);
+  const stepMax = getStepMax(config.progressionTag, config);
   const quantStep = config.weightQuantization ?? 0.5;
 
   const prevWeight = quantizeWeight(previousSet.weight, quantStep);
