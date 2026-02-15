@@ -74,4 +74,10 @@ app.get('/me', authMiddleware, async (req, res) => {
   return res.json({ user });
 });
 
+app.use((err: unknown, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error('Unhandled API error:', err);
+  const message = err instanceof Error ? err.message : String(err);
+  return res.status(500).json({ error: 'INTERNAL_SERVER_ERROR', message });
+});
+
 export default app;
