@@ -554,6 +554,7 @@ label {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  width: 100%;
 }
 
 .set-row {
@@ -575,6 +576,14 @@ label {
 .set-prev {
   grid-column: 1 / -1;
   margin-top: 4px;
+}
+
+.exercise-panel .card-header {
+  align-items: center;
+}
+
+.exercise-panel .card-body {
+  width: 100%;
 }
 
 .feedback-panel {
@@ -704,5 +713,17 @@ label {
 
   .app-main {
     padding: 20px 20px 96px;
+  }
+
+  .workout-page .set-row {
+    grid-template-columns: 56px minmax(0, 1fr) minmax(0, 1fr) auto;
+  }
+
+  .workout-page .set-row-no-load {
+    grid-template-columns: 56px minmax(0, 1fr) auto;
+  }
+
+  .exercise-panel .card-header h3 {
+    font-size: 1.15rem;
   }
 }

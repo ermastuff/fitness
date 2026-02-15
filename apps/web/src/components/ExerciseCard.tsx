@@ -3,18 +3,20 @@ import type { ReactNode } from 'react';
 type ExerciseCardProps = {
   title: string;
   subtitle?: string;
+  headerRight?: ReactNode;
   metrics?: Array<{ label: string; value: string | number | null }>;
   children?: ReactNode;
 };
 
-const ExerciseCard = ({ title, subtitle, metrics, children }: ExerciseCardProps) => {
+const ExerciseCard = ({ title, subtitle, headerRight, metrics, children }: ExerciseCardProps) => {
   return (
-    <article className="card exercise-card">
+    <article className="card exercise-panel">
       <header className="card-header">
         <div>
           <h3>{title}</h3>
           {subtitle ? <p className="muted">{subtitle}</p> : null}
         </div>
+        {headerRight}
       </header>
       {metrics ? (
         <div className="metric-row">

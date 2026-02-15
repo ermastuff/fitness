@@ -10,16 +10,8 @@ import { api, type PreviousSession, type SessionExercise } from '../lib/api';
 type ExerciseInputState = {
   sets: SetEntry[];
   rirLastSet: number | '';
-  notes: string;
   autoSetCount: number;
   useExternalLoad: boolean;
-};
-
-const getStepRange = (progressionTag: SessionExercise['exercise']['progressionTag']) => {
-  if (progressionTag === 'DB_STD') {
-    return { min: 1, max: 2.5, overstepUnit: 1.5 };
-  }
-  return { min: 2.5, max: 5, overstepUnit: 2.5 };
 };
 
 const SERIES_TARGET_CONFIG: SeriesTargetConfig = {
@@ -211,7 +203,6 @@ const WorkoutSessionPage = () => {
       next[exercise.id] = {
         sets,
         rirLastSet: exercise.exerciseResult?.rirLastSet ?? '',
-        notes: exercise.exerciseResult?.notes ?? '',
         autoSetCount: prevSetsCount > 0 ? prevSetsCount : targetSets,
         useExternalLoad,
       };
@@ -369,7 +360,6 @@ const WorkoutSessionPage = () => {
           repsDone: set.repsDone === '' ? null : Number(set.repsDone),
         })),
         rirLastSet: state?.rirLastSet === '' ? null : Number(state?.rirLastSet),
-        notes: state?.notes || null,
       };
     });
     completeMutation.mutate({
@@ -444,11 +434,8 @@ const WorkoutSessionPage = () => {
       <div className="stack">
         {sessionExercises.map((exercise: SessionExercise) => {
           const state = exerciseState[exercise.id];
-          const stepRange = getStepRange(exercise.exercise.progressionTag);
           const resistanceMode = exercise.exercise.resistanceMode;
-          const isRepsOnlyMode = resistanceMode === 'REPS_ONLY';
           const isOptionalBodyweight = resistanceMode === 'BODYWEIGHT_OPTIONAL_LOAD';
-          const isDeload = Boolean(session.week?.isDeload);
           const isWeekOne = session.week?.weekIndex === 1;
           const prevExercise = previousSetsMap.get(
             `${exercise.exercise.id}:${exercise.orderIndex}`,
@@ -466,22 +453,15 @@ const WorkoutSessionPage = () => {
                 <ExerciseCard
                   key={exercise.id}
                   title={exercise.exercise.name}
-                  subtitle={`Mode: ${exercise.mode}`}
-                  metrics={[
-                    { label: 'RIR target', value: session.week?.rirTarget ?? '-' },
-                  ]}
+                  headerRight={
+                    <div className="metric">
+                      <span className="metric-label">RIR target</span>
+                      <span className="metric-value">{session.week?.rirTarget ?? '-'}</span>
+                    </div>
+                  }
                 >
                   {state ? (
                     <>
-                      <p className="muted small">
-                        {isRepsOnlyMode
-                          ? 'Corpo libero: progressione su reps target (+1).'
-                          : isOptionalBodyweight && !state.useExternalLoad
-                            ? 'Corpo libero: reps target (+1). Attiva zavorra per usare progressione peso.'
-                            : isDeload
-                          ? 'Deload: carico ~90% rispetto alla settimana precedente.'
-                          : `Zona reps fisse: +${stepRange.min}-${stepRange.max} kg. Fuori range: ricalcolo e1RM.`}
-                      </p>
                       {isOptionalBodyweight ? (
                         <label className="switch">
                           <span>Usa zavorra</span>
@@ -583,20 +563,6 @@ const WorkoutSessionPage = () => {
                             rirLastSet:
                               event.target.value === '' ? '' : Number(event.target.value),
                           },
-                        })
-                      }
-                    />
-                  </label>
-                  <label className="input-row">
-                    Notes
-                    <input
-                      className="input"
-                      value={state.notes}
-                      disabled={isReadOnly}
-                      onChange={(event) =>
-                        setExerciseState({
-                          ...exerciseState,
-                          [exercise.id]: { ...state, notes: event.target.value },
                         })
                       }
                     />
