@@ -2,7 +2,11 @@ import { Router } from 'express';
 import { z } from 'zod';
 import * as PrismaModule from '../generated/prisma/index.js';
 import { prisma } from '../db/prisma.js';
-import { computeExerciseTargets, computePerfSessionFromNumbers } from '../services/trainingEngine.js';
+import {
+  computeExerciseTargets,
+  computePerfSessionFromNumbers,
+  computeRepsOnlyTarget,
+} from '../services/trainingEngine.js';
 import {
   aggregateWeeklyFeedback,
   applyPainOverride,
@@ -234,6 +238,7 @@ router.post('/:id/complete', async (req, res) => {
       loadUsed: number | null;
       repsDone: number | null;
     }[] = [];
+    const hasLoadedSetByExercise = new Map<string, boolean>();
 
     const exercisePerformance = new Map<
       string,
@@ -261,6 +266,11 @@ router.post('/:id/complete', async (req, res) => {
           repsDone: set.repsDone ?? null,
         });
       });
+
+      hasLoadedSetByExercise.set(
+        input.sessionExerciseId,
+        input.sets.some((set) => typeof set.loadUsed === 'number' && set.loadUsed > 0),
+      );
 
       const groupId = sessionExercise.exercise.primaryMuscleGroupId;
       const prevSets = setsByMuscleGroup.get(groupId) ?? 0;
@@ -733,7 +743,7 @@ router.post('/:id/complete', async (req, res) => {
 
     const targetUpdates: {
       sessionExerciseId: string;
-      loadTarget: number;
+      loadTarget: number | null;
       repsTargetHint: number;
       suggestionText: string | null;
     }[] = [];
@@ -743,6 +753,11 @@ router.post('/:id/complete', async (req, res) => {
       const repsRefPrev = perf?.repsRef ?? sessionExercise.repsTargetHint ?? null;
       const prevSetsTarget = originalSetsTarget.get(sessionExercise.id) ?? sessionExercise.setsTarget;
       const setsChanged = sessionExercise.setsTarget !== prevSetsTarget;
+      const resistanceMode = sessionExercise.exercise.resistanceMode;
+      const useLoadProgression =
+        resistanceMode === 'LOAD_AND_REPS' ||
+        (resistanceMode === 'BODYWEIGHT_OPTIONAL_LOAD' &&
+          Boolean(hasLoadedSetByExercise.get(sessionExercise.id)));
 
       if (!repsRefPrev || repsRefPrev <= 0) {
         if (setsChanged) {
@@ -757,6 +772,63 @@ router.post('/:id/complete', async (req, res) => {
             setsTarget: sessionExercise.setsTarget,
           });
         }
+        continue;
+      }
+
+      if (!useLoadProgression) {
+        const nextReps = computeRepsOnlyTarget(repsRefPrev);
+        const targetsChanged =
+          sessionExercise.loadTarget !== null || sessionExercise.repsTargetHint !== nextReps;
+
+        if (targetsChanged || setsChanged) {
+          const prevValue = {
+            loadTarget: sessionExercise.loadTarget,
+            repsTargetHint: sessionExercise.repsTargetHint,
+            setsTarget: prevSetsTarget,
+          };
+
+          sessionExercise.loadTarget = null;
+          sessionExercise.repsTargetHint = nextReps;
+
+          await tx.sessionExercise.update({
+            where: { id: sessionExercise.id },
+            data: {
+              loadTarget: null,
+              repsTargetHint: nextReps,
+              setsTarget: sessionExercise.setsTarget,
+            },
+          });
+
+          logs.push({
+            userId,
+            mesocycleId: session.mesocycleId,
+            weekId: session.weekId,
+            sessionId: session.id,
+            entityType: ProgressionEntityType.EXERCISE,
+            entityId: sessionExercise.id,
+            prevValue,
+            newValue: {
+              loadTarget: null,
+              repsTargetHint: nextReps,
+              setsTarget: sessionExercise.setsTarget,
+            },
+            reason: 'targets_update_reps_only',
+            source: RecordSource.USER,
+          });
+
+          await propagateTargetsToFuture(sessionExercise, {
+            loadTarget: null,
+            repsTargetHint: nextReps,
+            setsTarget: sessionExercise.setsTarget,
+          });
+        }
+
+        targetUpdates.push({
+          sessionExerciseId: sessionExercise.id,
+          loadTarget: null,
+          repsTargetHint: nextReps,
+          suggestionText: null,
+        });
         continue;
       }
 

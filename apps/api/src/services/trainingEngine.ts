@@ -1,6 +1,7 @@
 export type MesocycleStructure = 'THREE_ONE' | 'FOUR_ONE' | 'FIVE_ONE';
 export type ToolType = 'DUMBBELL' | 'BARBELL' | 'MACHINE' | 'BODYWEIGHT';
 export type ProgressionTag = 'DB_STD' | 'BB_STD' | 'MACH_STD';
+export type ResistanceMode = 'LOAD_AND_REPS' | 'REPS_ONLY' | 'BODYWEIGHT_OPTIONAL_LOAD';
 export type SessionExerciseMode = 'AUTO' | 'LOCK_LOAD' | 'LOCK_REPS';
 
 export const getRirTarget = (
@@ -110,6 +111,8 @@ type ExerciseTargetsResult = {
   repsTargetHint: number;
   suggestionText: string | null;
 };
+
+export const computeRepsOnlyTarget = (repsPrev: number) => Math.max(1, repsPrev + 1);
 
 const getStepMin = (progressionTag: ProgressionTag) =>
   progressionTag === 'DB_STD' ? 1 : 2.5;

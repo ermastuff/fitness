@@ -39,6 +39,7 @@ export type Exercise = {
   name: string;
   toolType: 'DUMBBELL' | 'BARBELL' | 'MACHINE' | 'BODYWEIGHT';
   progressionTag: 'DB_STD' | 'BB_STD' | 'MACH_STD';
+  resistanceMode: 'LOAD_AND_REPS' | 'REPS_ONLY' | 'BODYWEIGHT_OPTIONAL_LOAD';
   primaryMuscleGroupId: string;
   primaryMuscleGroup?: { id: string; name: string };
 };

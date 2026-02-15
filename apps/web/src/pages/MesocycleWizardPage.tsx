@@ -43,6 +43,11 @@ type ActiveDrag = {
   offsetY: number;
 };
 
+type ExercisePickerState = {
+  columnId: string;
+  exerciseRowId: string;
+};
+
 const structureOptions: Array<Mesocycle['structure']> = ['THREE_ONE', 'FOUR_ONE', 'FIVE_ONE'];
 const dayOptions = [
   { label: 'Lunedi', value: 1 },
@@ -87,6 +92,9 @@ const MesocycleWizardPage = () => {
   const [dragOver, setDragOver] = useState<{ columnId: string; index: number } | null>(
     null,
   );
+  const [exercisePicker, setExercisePicker] = useState<ExercisePickerState | null>(null);
+  const [pickerQuery, setPickerQuery] = useState('');
+  const [pickerMuscleGroupId, setPickerMuscleGroupId] = useState<string>('ALL');
   const columnsRef = useRef(columns);
   const dragOverRef = useRef(dragOver);
   const pressRef = useRef<PressState | null>(null);
@@ -115,6 +123,35 @@ const MesocycleWizardPage = () => {
     });
     return map;
   }, [lastHardBestsQuery.data?.bests]);
+
+  const exerciseCatalog = exercisesQuery.data?.exercises ?? [];
+  const exerciseById = useMemo(
+    () => new Map(exerciseCatalog.map((exercise) => [exercise.id, exercise])),
+    [exerciseCatalog],
+  );
+  const pickerMuscleGroups = useMemo(() => {
+    const map = new Map<string, string>();
+    exerciseCatalog.forEach((exercise) => {
+      if (exercise.primaryMuscleGroup?.id && exercise.primaryMuscleGroup?.name) {
+        map.set(exercise.primaryMuscleGroup.id, exercise.primaryMuscleGroup.name);
+      }
+    });
+    return Array.from(map.entries())
+      .map(([id, name]) => ({ id, name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [exerciseCatalog]);
+  const pickerResults = useMemo(() => {
+    const normalized = pickerQuery.trim().toLowerCase();
+    return exerciseCatalog.filter((exercise) => {
+      if (pickerMuscleGroupId !== 'ALL' && exercise.primaryMuscleGroupId !== pickerMuscleGroupId) {
+        return false;
+      }
+      if (!normalized) {
+        return true;
+      }
+      return exercise.name.toLowerCase().includes(normalized);
+    });
+  }, [exerciseCatalog, pickerMuscleGroupId, pickerQuery]);
 
   const createMesocycle = useMutation({
     mutationFn: () =>
@@ -402,6 +439,33 @@ const MesocycleWizardPage = () => {
     };
   }, [clearDrag, clearPress, moveExercise]);
 
+  const openExercisePicker = (columnId: string, exerciseRowId: string) => {
+    setExercisePicker({ columnId, exerciseRowId });
+    setPickerQuery('');
+    setPickerMuscleGroupId('ALL');
+  };
+
+  const applyPickedExercise = (exerciseId: string) => {
+    if (!exercisePicker) {
+      return;
+    }
+    setColumns((prev) =>
+      prev.map((column) =>
+        column.id !== exercisePicker.columnId
+          ? column
+          : {
+              ...column,
+              exercises: column.exercises.map((exercise) =>
+                exercise.id === exercisePicker.exerciseRowId
+                  ? { ...exercise, exerciseId }
+                  : exercise,
+              ),
+            },
+      ),
+    );
+    setExercisePicker(null);
+  };
+
   return (
     <div className="page wizard-page">
       <header className="page-header">
@@ -573,27 +637,15 @@ const MesocycleWizardPage = () => {
                             </div>
                           </div>
                           <div className="exercise-content">
-                            <select
-                              className="input"
-                              value={exercise.exerciseId}
-                              onChange={(event) => {
-                                const next = [...columns];
-                                const nextExercises = [...column.exercises];
-                                nextExercises[exIndex] = {
-                                  ...exercise,
-                                  exerciseId: event.target.value,
-                                };
-                                next[colIndex] = { ...column, exercises: nextExercises };
-                                setColumns(next);
-                              }}
+                            <button
+                              className="input exercise-picker-trigger"
+                              type="button"
+                              onClick={() => openExercisePicker(column.id, exercise.id)}
                             >
-                              <option value="">Seleziona esercizio</option>
-                              {exercisesQuery.data?.exercises?.map((item) => (
-                                <option key={item.id} value={item.id}>
-                                  {item.name}
-                                </option>
-                              ))}
-                            </select>
+                              {exercise.exerciseId
+                                ? exerciseById.get(exercise.exerciseId)?.name ?? 'Esercizio selezionato'
+                                : 'Cerca esercizio'}
+                            </button>
                             {best ? (
                               <p className="muted small">
                                 Last hard best: {best.weight} kg x {best.reps} reps (e1RM{' '}
@@ -700,6 +752,67 @@ const MesocycleWizardPage = () => {
           <p className="success-text">Sessioni salvate.</p>
         ) : null}
       </section>
+      {exercisePicker ? (
+        <div className="modal-backdrop" role="dialog" aria-modal="true">
+          <div className="modal-card">
+            <div className="modal-header">
+              <h3>Seleziona esercizio</h3>
+              <button
+                className="ghost-button"
+                type="button"
+                onClick={() => setExercisePicker(null)}
+              >
+                Chiudi
+              </button>
+            </div>
+            <div className="grid two">
+              <label>
+                Cerca
+                <input
+                  className="input"
+                  value={pickerQuery}
+                  onChange={(event) => setPickerQuery(event.target.value)}
+                  placeholder="Nome esercizio"
+                />
+              </label>
+              <label>
+                Distretto
+                <select
+                  className="input"
+                  value={pickerMuscleGroupId}
+                  onChange={(event) => setPickerMuscleGroupId(event.target.value)}
+                >
+                  <option value="ALL">Tutti</option>
+                  {pickerMuscleGroups.map((group) => (
+                    <option key={group.id} value={group.id}>
+                      {group.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            <div className="picker-list">
+              {pickerResults.map((exercise) => (
+                <button
+                  key={exercise.id}
+                  className="picker-item"
+                  type="button"
+                  onClick={() => applyPickedExercise(exercise.id)}
+                >
+                  <strong>{exercise.name}</strong>
+                  <span className="muted small">
+                    {(exercise.primaryMuscleGroup?.name ?? 'N/A')} · {exercise.toolType} ·{' '}
+                    {exercise.progressionTag}
+                  </span>
+                </button>
+              ))}
+              {pickerResults.length === 0 ? (
+                <p className="muted small">Nessun esercizio trovato con i filtri correnti.</p>
+              ) : null}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

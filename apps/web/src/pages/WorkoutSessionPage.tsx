@@ -12,6 +12,7 @@ type ExerciseInputState = {
   rirLastSet: number | '';
   notes: string;
   autoSetCount: number;
+  useExternalLoad: boolean;
 };
 
 const getStepRange = (progressionTag: SessionExercise['exercise']['progressionTag']) => {
@@ -30,6 +31,8 @@ const SERIES_TARGET_CONFIG: SeriesTargetConfig = {
   maxRepsScan: 30,
   removeRepsIfClamped: true,
 };
+
+const isLoadProvided = (value: number | null | undefined) => typeof value === 'number' && value > 0;
 
 const WorkoutSessionPage = () => {
   const { id } = useParams();
@@ -113,6 +116,9 @@ const WorkoutSessionPage = () => {
     const next: Record<string, ExerciseInputState> = {};
     const exercises = session.sessionExercises ?? [];
     exercises.forEach((exercise) => {
+      const resistanceMode = exercise.exercise.resistanceMode;
+      const isRepsOnly = resistanceMode === 'REPS_ONLY';
+      const isBodyweightOptional = resistanceMode === 'BODYWEIGHT_OPTIONAL_LOAD';
       const prevExercise = prevMap.get(
         `${exercise.exercise.id}:${exercise.orderIndex}`,
       );
@@ -124,10 +130,20 @@ const WorkoutSessionPage = () => {
       const sortedSets = [...(exercise.workoutSets ?? [])].sort(
         (a, b) => a.setIndex - b.setIndex,
       );
+      const hasExternalLoadHistory =
+        sortedSets.some((set) => isLoadProvided(set.loadUsed)) ||
+        (prevExercise?.workoutSets?.some((set) => isLoadProvided(set.loadUsed)) ?? false) ||
+        isLoadProvided(prevExercise?.loadTarget) ||
+        isLoadProvided(exercise.loadTarget);
+      const useExternalLoad = isRepsOnly
+        ? false
+        : isBodyweightOptional
+          ? hasExternalLoadHistory
+          : true;
       const hasRecordedSets = sortedSets.length > 0;
       const sets = hasRecordedSets
         ? sortedSets.map((set) => ({
-            loadUsed: set.loadUsed ?? '',
+            loadUsed: useExternalLoad ? set.loadUsed ?? '' : '',
             repsDone: set.repsDone ?? '',
           }))
         : Array.from({ length: targetSets }, (_, idx) => {
@@ -156,6 +172,20 @@ const WorkoutSessionPage = () => {
               }
               return { loadUsed: '', repsDone: '' };
             }
+
+            if (!useExternalLoad) {
+              const prevReps =
+                typeof prevSet?.repsDone === 'number'
+                  ? prevSet.repsDone
+                  : prevSetsCount === 0 && typeof exercise.repsTargetHint === 'number'
+                    ? exercise.repsTargetHint
+                    : null;
+              return {
+                loadUsed: '',
+                repsDone: prevReps ? prevReps + 1 : exercise.repsTargetHint ?? '',
+              };
+            }
+
             const baseSet =
               typeof prevSet?.loadUsed === 'number' && typeof prevSet?.repsDone === 'number'
                 ? { weight: prevSet.loadUsed, reps: prevSet.repsDone }
@@ -183,6 +213,7 @@ const WorkoutSessionPage = () => {
         rirLastSet: exercise.exerciseResult?.rirLastSet ?? '',
         notes: exercise.exerciseResult?.notes ?? '',
         autoSetCount: prevSetsCount > 0 ? prevSetsCount : targetSets,
+        useExternalLoad,
       };
     });
     setExerciseState(next);
@@ -414,6 +445,9 @@ const WorkoutSessionPage = () => {
         {sessionExercises.map((exercise: SessionExercise) => {
           const state = exerciseState[exercise.id];
           const stepRange = getStepRange(exercise.exercise.progressionTag);
+          const resistanceMode = exercise.exercise.resistanceMode;
+          const isRepsOnlyMode = resistanceMode === 'REPS_ONLY';
+          const isOptionalBodyweight = resistanceMode === 'BODYWEIGHT_OPTIONAL_LOAD';
           const isDeload = Boolean(session.week?.isDeload);
           const isWeekOne = session.week?.weekIndex === 1;
           const prevExercise = previousSetsMap.get(
@@ -440,10 +474,37 @@ const WorkoutSessionPage = () => {
                   {state ? (
                     <>
                       <p className="muted small">
-                        {isDeload
+                        {isRepsOnlyMode
+                          ? 'Corpo libero: progressione su reps target (+1).'
+                          : isOptionalBodyweight && !state.useExternalLoad
+                            ? 'Corpo libero: reps target (+1). Attiva zavorra per usare progressione peso.'
+                            : isDeload
                           ? 'Deload: carico ~90% rispetto alla settimana precedente.'
                           : `Zona reps fisse: +${stepRange.min}-${stepRange.max} kg. Fuori range: ricalcolo e1RM.`}
                       </p>
+                      {isOptionalBodyweight ? (
+                        <label className="switch">
+                          <span>Usa zavorra</span>
+                          <input
+                            type="checkbox"
+                            checked={state.useExternalLoad}
+                            disabled={isReadOnly}
+                            onChange={(event) => {
+                              const enabled = event.target.checked;
+                              setExerciseState({
+                                ...exerciseState,
+                                [exercise.id]: {
+                                  ...state,
+                                  useExternalLoad: enabled,
+                                  sets: enabled
+                                    ? state.sets
+                                    : state.sets.map((set) => ({ ...set, loadUsed: '' })),
+                                },
+                              });
+                            }}
+                          />
+                        </label>
+                      ) : null}
                       {lastHardBest ? (
                         <p className="muted small">
                           Last hard best: {lastHardBest.weight} kg x {lastHardBest.reps} reps
@@ -453,12 +514,13 @@ const WorkoutSessionPage = () => {
                     sets={state.sets}
                     disabled={isReadOnly}
                     prevSets={prevSets}
+                    showLoadInput={state.useExternalLoad}
                     onChange={(next, meta) => {
                       if (!state) {
                         return;
                       }
                       let updatedSets = next;
-                      if (meta?.field === 'loadUsed') {
+                      if (state.useExternalLoad && meta?.field === 'loadUsed') {
                         if (meta.index >= state.autoSetCount) {
                           setExerciseState({
                             ...exerciseState,

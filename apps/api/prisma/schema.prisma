@@ -31,6 +31,12 @@ enum ProgressionTag {
   MACH_STD
 }
 
+enum ResistanceMode {
+  LOAD_AND_REPS
+  REPS_ONLY
+  BODYWEIGHT_OPTIONAL_LOAD
+}
+
 enum SessionExerciseMode {
   AUTO
   LOCK_LOAD
@@ -148,6 +154,7 @@ model Exercise {
   name                 String
   toolType             ToolType @map("tool_type")
   progressionTag       ProgressionTag @default(DB_STD) @map("progression_tag")
+  resistanceMode       ResistanceMode @default(LOAD_AND_REPS) @map("resistance_mode")
   primaryMuscleGroupId String   @db.Uuid @map("primary_muscle_group_id")
   createdAt            DateTime @default(now()) @map("created_at")
 
@@ -158,6 +165,7 @@ model Exercise {
 
   @@index([primaryMuscleGroupId])
   @@index([progressionTag])
+  @@index([resistanceMode])
   @@index([name])
   @@unique([name, toolType])
   @@map("exercises")

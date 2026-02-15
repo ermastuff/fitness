@@ -8,9 +8,16 @@ type SetEditorProps = {
   onChange: (next: SetEntry[], meta?: { index: number; field: keyof SetEntry }) => void;
   disabled?: boolean;
   prevSets?: { loadUsed: number | null; repsDone: number | null }[];
+  showLoadInput?: boolean;
 };
 
-const SetEditor = ({ sets, onChange, disabled = false, prevSets = [] }: SetEditorProps) => {
+const SetEditor = ({
+  sets,
+  onChange,
+  disabled = false,
+  prevSets = [],
+  showLoadInput = true,
+}: SetEditorProps) => {
   const updateSet = (index: number, field: keyof SetEntry, value: number | '') => {
     const next = [...sets];
     next[index] = { ...next[index], [field]: value };
@@ -23,7 +30,7 @@ const SetEditor = ({ sets, onChange, disabled = false, prevSets = [] }: SetEdito
   return (
     <div className="set-editor">
       {sets.map((set, index) => (
-        <div key={index} className="set-row">
+        <div key={index} className={`set-row ${showLoadInput ? '' : 'set-row-no-load'}`}>
           <span className="set-label">Set {index + 1}</span>
           <input
             className="input"
@@ -31,6 +38,7 @@ const SetEditor = ({ sets, onChange, disabled = false, prevSets = [] }: SetEdito
             placeholder="Load"
             value={set.loadUsed}
             disabled={disabled}
+            hidden={!showLoadInput}
             onChange={(event) =>
               updateSet(
                 index,
@@ -63,7 +71,9 @@ const SetEditor = ({ sets, onChange, disabled = false, prevSets = [] }: SetEdito
           </button>
           {prevSets?.[index] ? (
             <span className="set-prev muted small">
-              Prev: {prevSets[index]?.loadUsed ?? '-'}kg x {prevSets[index]?.repsDone ?? '-'} reps
+              Prev:{' '}
+              {showLoadInput ? `${prevSets[index]?.loadUsed ?? '-'}kg x ` : ''}
+              {prevSets[index]?.repsDone ?? '-'} reps
             </span>
           ) : null}
         </div>

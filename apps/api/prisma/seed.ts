@@ -204,6 +204,11 @@ const exercises = [
   { name: 'Jump rope', primary: 'condizionamento', toolType: 'BODYWEIGHT', progressionTag: 'DB_STD' },
 ];
 
+const weightedBodyweightExercises = new Set([
+  'Dip (parallele)',
+  'Pull-up / Chin-up',
+]);
+
 async function main() {
   const muscleGroupRecords = await Promise.all(
     muscleGroups.map((name) =>
@@ -225,6 +230,13 @@ async function main() {
       throw new Error(`Missing muscle group for exercise: ${exercise.name}`);
     }
 
+    const resistanceMode =
+      exercise.toolType !== 'BODYWEIGHT'
+        ? 'LOAD_AND_REPS'
+        : weightedBodyweightExercises.has(exercise.name)
+          ? 'BODYWEIGHT_OPTIONAL_LOAD'
+          : 'REPS_ONLY';
+
     await prisma.exercise.upsert({
       where: {
         name_toolType: {
@@ -235,11 +247,13 @@ async function main() {
       update: {
         primaryMuscleGroupId,
         progressionTag: exercise.progressionTag,
+        resistanceMode,
       },
       create: {
         name: exercise.name,
         toolType: exercise.toolType,
         progressionTag: exercise.progressionTag,
+        resistanceMode,
         primaryMuscleGroupId,
       },
     });
