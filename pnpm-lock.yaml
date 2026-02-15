@@ -44,6 +44,9 @@ importers:
       '@prisma/client':
         specifier: latest
         version: 7.3.0(prisma@7.3.0)(typescript@5.9.3)
+      '@prisma/client-runtime-utils':
+        specifier: 7.3.0
+        version: 7.3.0
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
