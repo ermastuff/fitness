@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import * as PrismaModule from '@prisma/client';
+import * as PrismaModule from '../generated/prisma/index.js';
 import { prisma } from '../db/prisma.js';
 import { computeExerciseTargets, computePerfSessionFromNumbers } from '../services/trainingEngine.js';
 import {

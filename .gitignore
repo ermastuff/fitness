@@ -12,3 +12,4 @@ coverage
 !.env.example
 apps/api/.env
 apps/web/.env
+apps/api/src/generated

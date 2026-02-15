@@ -1,4 +1,3 @@
-import type { NextFunction, Request, Response } from 'express';
 import jwt, { JwtPayload } from 'jsonwebtoken';
 
 const getJwtSecret = () => {
@@ -9,7 +8,7 @@ const getJwtSecret = () => {
   return secret;
 };
 
-export const authMiddleware = (req: Request, res: Response, next: NextFunction) => {
+export const authMiddleware = (req: any, res: any, next: any) => {
   const header = req.headers.authorization;
   if (!header || !header.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Unauthorized' });
