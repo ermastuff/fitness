@@ -2,6 +2,7 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { Pool } from 'pg';
 import * as PrismaClientModule from '../generated/prisma/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -27,7 +28,14 @@ const getPrismaClient = () => {
     throw new Error('DATABASE_URL is not set.');
   }
 
-  const adapter = new PrismaPg({ connectionString });
+  // Supabase pooler often uses a cert chain that fails strict verification in serverless.
+  const pool = new Pool({
+    connectionString,
+    ssl: {
+      rejectUnauthorized: false,
+    },
+  });
+  const adapter = new PrismaPg(pool);
   prismaClient = new PrismaClientCtor({ adapter });
   return prismaClient;
 };
