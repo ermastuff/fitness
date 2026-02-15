@@ -1,6 +1,6 @@
 import { getStoredToken } from './auth';
 
-const API_URL = import.meta.env.VITE_API_URL ?? 'http://localhost:3001';
+const API_URL = (import.meta.env.VITE_API_URL ?? 'http://localhost:3001').replace(/\/+$/, '');
 
 export type ApiError = {
   error: string;
@@ -115,6 +115,7 @@ const request = async <T>(
   path: string,
   options: RequestInit & { auth?: boolean } = {},
 ): Promise<T> => {
+  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const headers = new Headers(options.headers);
   headers.set('Content-Type', 'application/json');
 
@@ -125,7 +126,7 @@ const request = async <T>(
     }
   }
 
-  const response = await fetch(`${API_URL}${path}`, {
+  const response = await fetch(`${API_URL}${normalizedPath}`, {
     ...options,
     headers,
   });
