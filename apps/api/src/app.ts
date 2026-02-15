@@ -15,13 +15,23 @@ const app = express();
 
 const originEnv = process.env.CORS_ORIGIN ?? process.env.CORS_ORIGINS ?? '';
 const allowAll = originEnv.trim() === '*';
+const normalizeOrigin = (value: string) => value.trim().replace(/\/+$/, '').toLowerCase();
 const allowedOrigins = originEnv
-  ? originEnv.split(',').map((value) => value.trim()).filter(Boolean)
+  ? originEnv.split(',').map((value) => normalizeOrigin(value)).filter(Boolean)
   : ['http://localhost:3000'];
+const allowedOriginSet = new Set(allowedOrigins);
 
 app.use(
   cors({
-    origin: allowAll ? true : allowedOrigins,
+    origin: (requestOrigin, callback) => {
+      if (allowAll || !requestOrigin) {
+        callback(null, true);
+        return;
+      }
+
+      const normalizedRequestOrigin = normalizeOrigin(requestOrigin);
+      callback(null, allowedOriginSet.has(normalizedRequestOrigin));
+    },
     credentials: true,
   }),
 );
