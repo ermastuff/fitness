@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { ProgressionEntityType, RecordSource, SessionExerciseMode } from '@prisma/client';
+import * as PrismaModule from '@prisma/client';
 import { prisma } from '../db/prisma.js';
 import { computeExerciseTargets, computePerfSessionFromNumbers } from '../services/trainingEngine.js';
 import {
@@ -14,6 +14,13 @@ import {
 import { computeWeekExerciseBests } from '../services/exerciseBests.js';
 
 const router = Router();
+const ProgressionEntityType = (PrismaModule as any).ProgressionEntityType;
+const RecordSource = (PrismaModule as any).RecordSource;
+const SessionExerciseMode = (PrismaModule as any).SessionExerciseMode;
+
+if (!ProgressionEntityType || !RecordSource || !SessionExerciseMode) {
+  throw new Error('Prisma enums export not found');
+}
 
 const createSessionExerciseSchema = z.object({
   exerciseId: z.string().uuid(),

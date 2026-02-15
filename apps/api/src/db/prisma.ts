@@ -2,12 +2,20 @@ import dotenv from 'dotenv';
 import { fileURLToPath } from 'url';
 import { dirname, resolve } from 'path';
 import { PrismaPg } from '@prisma/adapter-pg';
-import { PrismaClient } from '@prisma/client';
+import * as PrismaClientModule from '@prisma/client';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config({ path: resolve(__dirname, '../../.env') });
 
-let prismaClient: PrismaClient | null = null;
+const PrismaClientCtor =
+  (PrismaClientModule as any).PrismaClient ??
+  (PrismaClientModule as any).default?.PrismaClient;
+
+if (!PrismaClientCtor) {
+  throw new Error('@prisma/client PrismaClient export not found');
+}
+
+let prismaClient: any = null;
 
 const getPrismaClient = () => {
   if (prismaClient) {
@@ -20,11 +28,11 @@ const getPrismaClient = () => {
   }
 
   const adapter = new PrismaPg({ connectionString });
-  prismaClient = new PrismaClient({ adapter });
+  prismaClient = new PrismaClientCtor({ adapter });
   return prismaClient;
 };
 
-export const prisma = new Proxy({} as PrismaClient, {
+export const prisma = new Proxy({} as any, {
   get(_target, prop) {
     const client = getPrismaClient() as any;
     const value = client[prop];

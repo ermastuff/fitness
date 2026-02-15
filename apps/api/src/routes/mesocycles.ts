@@ -1,10 +1,16 @@
 import { Router } from 'express';
 import { z } from 'zod';
-import { MesocycleStructure, RecordSource } from '@prisma/client';
+import * as PrismaModule from '@prisma/client';
 import { prisma } from '../db/prisma.js';
 import { computeWeekExerciseBests } from '../services/exerciseBests.js';
 
 const router = Router();
+const MesocycleStructure = (PrismaModule as any).MesocycleStructure;
+const RecordSource = (PrismaModule as any).RecordSource;
+
+if (!MesocycleStructure || !RecordSource) {
+  throw new Error('Prisma enums export not found');
+}
 
 const createMesocycleSchema = z.object({
   startDate: z.coerce.date(),
@@ -178,7 +184,7 @@ router.post('/:id/sessions', async (req, res) => {
   });
 });
 
-router.post('/:id/after-deload', async (req, res) => {
+router.post('/:id/after-deload', async (req: any, res: any) => {
   if (!req.user?.id) {
     return res.status(401).json({ error: 'Unauthorized' });
   }
@@ -246,7 +252,7 @@ router.post('/:id/after-deload', async (req, res) => {
     };
   });
 
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: any) => {
     await computeWeekExerciseBests(tx, req.user.id, lastHardWeek.id);
 
     await tx.mesocycle.updateMany({
@@ -284,8 +290,8 @@ router.post('/:id/after-deload', async (req, res) => {
     }
 
     const dayMs = 24 * 60 * 60 * 1000;
-    const sessionsData = newMesocycle.weeks.flatMap((week) =>
-      templateSessions.map((template) => {
+    const sessionsData = newMesocycle.weeks.flatMap((week: any) =>
+      templateSessions.map((template: any) => {
         const offsetDays = Math.round(
           (new Date(template.scheduledDate).getTime() - current.startDate.getTime()) /
             dayMs,
@@ -311,14 +317,14 @@ router.post('/:id/after-deload', async (req, res) => {
     });
 
     const sessionsByKey = new Map<string, { id: string; weekIndex: number }[]>();
-    weekSessions.forEach((session) => {
+    weekSessions.forEach((session: any) => {
       const key = `${session.dayOfWeek}:${session.sessionOrderInWeek}`;
       const list = sessionsByKey.get(key) ?? [];
       list.push({ id: session.id, weekIndex: session.week.weekIndex });
       sessionsByKey.set(key, list);
     });
 
-    for (const template of templateSessions) {
+    for (const template of templateSessions as any[]) {
       const key = `${template.dayOfWeek}:${template.sessionOrderInWeek}`;
       const targets = sessionsByKey.get(key) ?? [];
       if (targets.length === 0) {
